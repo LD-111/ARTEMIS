@@ -7,4 +7,4 @@ app.include_router(router, prefix="/email")
 
 @app.get("/")
 def root():
-    return {"message": "ARTEMIS Mailer is online, bitch 😘"}
+    return {"message": "ARTEMIS Mailer is online, 😘"}

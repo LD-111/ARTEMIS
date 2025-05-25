@@ -1,3 +1,4 @@
 mailer/token.json
 mailer/credentials.json
-mailer/app/__pycache__
+*/app/__pycache__
+*/.env
