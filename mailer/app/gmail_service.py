@@ -44,9 +44,11 @@ def read_unread_emails(from_email: str):
         service.users().messages().modify(userId='me', id=msg['id'], body={'removeLabelIds': ['UNREAD']}).execute()
 
         parsed.append({
-            "sender": sender,
-            "subject": subject,
-            "body": body
+            "content": {
+                "sender": sender,
+                "subject": subject,
+                "body": body
+            }
         })
     
     return parsed
