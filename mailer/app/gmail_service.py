@@ -9,9 +9,23 @@ def build_service():
 
 def send_email(to, subject, body):
     service = build_service()
-    message = MIMEText(body)
+
+    # Convert plain text with \n into basic HTML
+    html_body = f"""
+    <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <p style="text-align: justify;">
+                {body.replace('\n\n', '</p><p style="text-align: justify;">').replace('\n', '<br>')}
+            </p>
+        </body>
+    </html>
+    """
+
+    # Create MIMEText as HTML
+    message = MIMEText(html_body, 'html')
     message['to'] = to
     message['subject'] = subject
+
     raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
     body = {'raw': raw}
     service.users().messages().send(userId='me', body=body).execute()
