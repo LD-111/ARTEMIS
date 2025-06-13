@@ -1,0 +1,4 @@
+mailer/token.json
+mailer/credentials.json
+**/__pycache__
+*/.env
