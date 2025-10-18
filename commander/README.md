@@ -1,67 +1,97 @@
-# 🧩 ARTEMIS Commander Microservice
+# 🐳 ARTEMIS Commander - Docker Setup
 
-This microservice coordinates all others—receiving high-level input and issuing instructions to components like the Mailer and AI Router.
+This guide explains how to build and run the Commander microservice as a Docker container.
 
----
+## 📋 Prerequisites
+Docker installed on your system
+Access to the Mailer and AI Router services (or their URLs)
+## 🏗️ Building the Image
 
-## ⚙️ Role in the System
-
-The Commander runs the full loop of the ARTEMIS system:
-
-1. **Email Check** 👉 Triggers the Mailer to fetch new unread emails.
-2. **AI Processing** 👉 Passes parsed emails to the AI Router to interpret and decide on actions.
-3. **Execution** 👉 Sends back AI-decided replies through the Mailer.
-4. **Future-Ready** 👉 Can be extended to support calendar scheduling, database access, Slack messages, and whatever else you throw at it.
-
----
-
-## 🧠 Features
-
-- 📬 Triggers Gmail inbox polling via the Mailer service.
-- 🧠 Passes incoming mail to the AI Router for interpretation.
-- 📤 Dispatches AI-generated responses as real emails.
-- 🧱 Modular structure – plug in new microservices as needed.
-- 📡 Central orchestration logic.
-
----
-
-## 🛠️ Setup Instructions
-
-### 1. Clone the Repo
-
+From the commander directory, build the Docker image:
 ```bash
-cd artemis/commander
+docker build -t artemis-commander .
 ```
-2. Create Virtual Environment
-
+## 🚀 Running the Container
+Basic Run
 ```bash
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+docker run -p 8000:8000 \
+  -e MAILER_API_URL=http://mailer:8001 \
+  -e AI_ROUTER_API_URL=http://ai-router:8002 \
+  -e POLLING_INTERVAL=30 \
+  -e TARGET_SENDER=your@email.com \
+  artemis-commander
 ```
-3. Add Environment Configuration
 
-Create a .env file in the root with:
-```env
-MAILER_API_URL=http://localhost:8001
-AI_ROUTER_API_URL=http://localhost:8002
-POLLING_INTERVAL=30 
-TARGET_SENDER={email here}
-```
-Change the ports/hosts to match your actual deployment setup. For now, it only works with an authorized email to avoid answering to every mail, perhaps a proper filter could be added in the future.
-## 🚀 Running the Microservice
+Run with Custom Configuration
 ```bash
-uvicorn app.main:app --reload
+docker run -p 8000:8000 \
+  -e MAILER_API_URL=http://192.168.1.100:8001 \
+  -e AI_ROUTER_API_URL=http://192.168.1.100:8002 \
+  -e POLLING_INTERVAL=60 \
+  -e TARGET_SENDER=boss@company.com \
+  --name commander \
+  -d \
+  artemis-commander
 ```
-Defaults to running on http://localhost:8000.
-## 🔁 How It Works (Request Flow)
 
-1. Trigger endpoint (e.g. /run) is called manually or on a timer.
-2. Commander:
-    - Calls GET /email/read on the Mailer.
+Run in Detached Mode
+```bash
+docker run -d \
+  -p 8000:8000 \
+  -e MAILER_API_URL=http://mailer:8001 \
+  -e AI_ROUTER_API_URL=http://ai-router:8002 \
+  -e TARGET_SENDER=your@email.com \
+  --name artemis-commander \
+  --restart unless-stopped \
+  artemis-commander
+```
 
-    - For each message, calls POST /ai/process on the AI Router.
+## 🔧 Environment Variables
 
-    - Parses the response.
+| Variable | Description | Default | Required |
+|---|---|---|---|
+| MAILER_API_URL | URL of the Mailer service | http://mailer:8001 | Yes |
+| AI_ROUTER_API_URL | URL of the AI Router service | http://ai-router:8002 | Yes |
+| POLLING_INTERVAL | Seconds between email checks | 30 | No |
+| TARGET_SENDER | Email address to filter/process	None | None | Yes |
+## 📊 Viewing Logs
+### Follow logs in real-time
+```bash
+docker logs -f artemis-commander
+```
 
-    - Sends results via POST /email/send through the Mailer.
+### View last 100 lines
+```bash
+docker logs --tail 100 artemis-commander
+```
+
+## 🛑 Stopping the Container
+```bash
+docker stop artemis-commander
+docker rm artemis-commander
+```
+
+## 🔍 Troubleshooting
+### Container crashes immediately
+- Check that TARGET_SENDER is set
+- Verify environment variables are correct
+### "Cannot connect to Mailer/AI Router service"
+- Ensure the service URLs are reachable from the container
+- If running locally, use host IP instead of localhost
+- For Docker networks, use service names (e.g., http://mailer:8001)
+### Check container health
+```bash
+docker ps -a
+docker inspect artemis-commander
+```
+## 🌐 API Endpoints
+
+The Commander service runs on port 8000 and exposes:
+
+- Health Check: GET http://localhost:8000/docs (FastAPI auto-docs)
+
+The polling happens automatically in the background on startup.
+
+## 🔗 Running with Other Services
+
+When running all ARTEMIS services together, consider using Docker Compose for easier networking and orchestration. Service names will automatically resolve within the Docker network.
